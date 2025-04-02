@@ -165,17 +165,25 @@ class OtpValidationForResetSerializer(serializers.Serializer):
 
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
-
     new_password = serializers.CharField(write_only=True, min_length=6)
+    re_enter_password = serializers.CharField(write_only=True, min_length=6)
 
     def validate(self, data):
         email = data["email"]
+        new_password = data['new_password']
+        confirm_password = data['re_enter_password']
 
         try:
             user = CustomUser.objects.get(email=email)
 
         except CustomUser.DoesNotExist:
             raise serializers.ValidationError("User with this email does not exist.")
+
+        if new_password != confirm_password:
+            raise serializers.ValidationError('Passwords do not match')
+
+
+
 
         return data
 
