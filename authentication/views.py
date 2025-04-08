@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import Group
 from django.utils.timezone import now
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -9,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import CustomUser
 from authentication.serializers import RegistrationSerializer, LoginSerializer, OtpSerializer, ForgetPasswordSerializer, \
-    ResetPasswordSerializer, OtpValidationForResetSerializer, ChangePasswordSerializer
+    ResetPasswordSerializer, OtpValidationForResetSerializer, ChangePasswordSerializer, VendorRegistrationSerializer
 
 
 class RegisterView(GenericAPIView):
@@ -147,6 +148,22 @@ class ChangePasswordView(GenericAPIView):
             serializer.save()
             return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class VendorRegisterView(GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
+
+    serializer_class = VendorRegistrationSerializer
+
+    def post(self,request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            user=serializer.save()
+            vendor_group, created = Group.objects.get_or_create(name='Vendor')
+            user.groups.add(vendor_group)
+            return Response({'message': 'User registered. Please check your email for OTP.'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors)
 
 
 

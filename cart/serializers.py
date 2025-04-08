@@ -33,4 +33,6 @@ class RemoveFromCartSerializer(serializers.Serializer):
 class CheckoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['cart', 'order_date', 'total_price', 'status']
+        fields = '__all__'
+
+

@@ -28,12 +28,16 @@ class CustomUserManager(BaseUserManager):
 class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(max_length=255, unique=True)
-    firstname = models.CharField(max_length=255)
-    lastname = models.CharField(max_length=255)
+    firstname = models.CharField(max_length=255,blank=True,null=True)
+    lastname = models.CharField(max_length=255,blank=True,null=True)
     phoneno = models.CharField(max_length=10)
     otp = models.IntegerField(blank=True,null=True)
-
     expiry_otp=models.DateTimeField(blank=True, null=True)
+
+    company_name = models.CharField(max_length=255, blank=True, null=True)
+    company_address = models.TextField(blank=True, null=True)
+    company_pan_number = models.CharField(max_length=10, blank=True, null=True)
+
 
 
     is_active = models.BooleanField(default=True)
@@ -42,7 +46,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_verified = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['firstname']
+
 
 
     objects = CustomUserManager()

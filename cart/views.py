@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.contrib.admin import action
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
@@ -81,18 +83,33 @@ class CheckoutViewSet(viewsets.ModelViewSet):
         if not cart:
             return Response({'detail': 'No cart found or cart is already checked out'}, status=status.HTTP_400_BAD_REQUEST)
 
-        order = Order.objects.create(
-            cart=cart,
-            total_price=cart.total_price(),
-            status="Pending"
-        )
-        print(order)
+        if not cart.items.exists():
+            return Response({'detail': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Group items by vendor
+        vendor_items = defaultdict(list)
+        for item in cart.items.select_related('product'):
+            vendor = item.product.vendor
+            vendor_items[vendor].append(item)
+        created_orders = []
+        for vendor, items in vendor_items.items():
+            order = Order.objects.create(
+                cart=cart,
+                vendor=vendor,
+                user=request.user,
+                total_price=sum([item.product.price * item.quantity for item in items]),
+                status='Pending'
+            )
+            created_orders.append(order)
+
         cart.is_checked_out = True
         cart.save()
 
-        serializer = self.serializer_class(order)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+        serializer = self.get_serializer(created_orders, many=True)
+        return Response({
+            'message': 'Order(s) placed successfully.',
+            'orders': serializer.data
+        }, status=status.HTTP_201_CREATED)
 
 
 

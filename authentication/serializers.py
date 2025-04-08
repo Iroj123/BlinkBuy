@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
 from django.utils.timezone import now
 from rest_framework import serializers
@@ -29,7 +30,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         fields= ['email','firstname','lastname','phoneno','password','re_password']
         extra_kwargs = {
             'password': {'required': True},
-            'repeat_password': {'required': True},
+            're_password': {'required': True},
         }
     def validate_email(self, value):
 
@@ -182,9 +183,6 @@ class ResetPasswordSerializer(serializers.Serializer):
         if new_password != confirm_password:
             raise serializers.ValidationError('Passwords do not match')
 
-
-
-
         return data
 
     def save(self):
@@ -220,6 +218,86 @@ class ChangePasswordSerializer(serializers.Serializer):
         new_password = self.validated_data['new_password']
         user.set_password(new_password)
         user.save()
+
+
+
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'email', 'firstname','lastname','phoneno','groups']
+
+
+
+# class UserRoleUpdateSerializer(serializers.Serializer):
+#     role = serializers.ChoiceField(choices=["Admin", "Vendor", "User"])
+#
+#     def update(self, instance, validated_data):
+#         role = validated_data["role"]
+#
+#         # Remove from all role groups
+#         role_groups = ["Admin", "Vendor", "User"]
+#         for group_name in role_groups:
+#             group = Group.objects.get(name=group_name)
+#             instance.groups.remove(group)
+#
+#         # Add to the selected group
+#         new_group = Group.objects.get(name=role)
+#         instance.groups.add(new_group)
+#
+#         instance.save()
+#         return instance
+
+
+
+class VendorRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    re_password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['email','phoneno','company_name','company_address','company_pan_number','password','re_password']
+        extra_kwargs = {
+            'password': {'required': True},
+            're_password': {'required': True},
+        }
+
+
+    def validate_email(self, value):
+
+        if get_user_model().objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already registered")
+        return value
+
+    def validate(self, data):
+        password = data.get('password')
+        re_password = data.get('re_password')
+        if password != re_password:
+            raise serializers.ValidationError('Passwords do not match')
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('re_password', None)
+
+        firstname = validated_data.get('firstname', '')
+        lastname = validated_data.get('lastname', '')
+
+        user = get_user_model().objects.create_user(email=validated_data['email'],
+                                                        company_name=validated_data['company_name'],
+                                                        company_address=validated_data['company_address'],
+                                                        company_pan_number=validated_data['company_pan_number'],
+                                                        firstname=firstname,
+                                                        lastname=lastname,
+                                                        phoneno=validated_data['phoneno'],
+                                                        password=validated_data['password'])
+
+        user.is_verified = False
+        user.otp = get_random_string(length=6, allowed_chars="0123456789")
+        user.expiry_otp = datetime.now() + timedelta(minutes=5)
+        user.save()
+        send_otp(user)
+        return user
 
 
 

@@ -40,4 +40,7 @@ urlpatterns = [
     path('manage/',include('inventorymanagement.urls')),
     path('cart/', include('cart.urls')),
     path('admin/', admin.site.urls),
+    path('dashboard/',include('dashboard.urls')),
+    path('vendor/', include('vendor.urls')),
+
 ]

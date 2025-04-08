@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'authentication',
     'inventorymanagement',
     'cart.apps.CartConfig',
+    'dashboard',
+    'vendor',
 
 ]
 
