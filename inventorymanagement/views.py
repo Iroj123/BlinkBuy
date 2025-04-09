@@ -1,39 +1,55 @@
 from django.db.models import Sum
 from rest_framework import permissions, viewsets, generics
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser, FileUploadParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cart.models import Order, CartItem
-from inventorymanagement.models import Product
+from inventorymanagement.models import Product, ProductImages
 from inventorymanagement.serializers import ProductSerializer
-
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
 class IsVendor(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.groups.filter(name='Vendor').exists()
 
+
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.groups.filter(name='Admin').exists()
 
+
 class IsUser(permissions.BasePermission):
     def has_permission(self, request, view):
         return (
-            request.user.is_authenticated and
-            not request.user.groups.filter(name__in=['Admin', 'Vendor']).exists()
+                request.user.is_authenticated and
+                not request.user.groups.filter(name__in=['Admin', 'Vendor']).exists()
         )
+
 
 class IsOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user or request.user.groups.filter(name='Admin').exists()
 
+
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    parser_classes = [MultiPartParser,FormParser, JSONParser]
     permission_classes = [IsVendor | IsAdmin]
 
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
+    #
+    # def get_parsers(self):
+    #     print("REQUEST:", self.request)
+    #     print("METHOD:", self.request.method)
+    #     if self.request and self.request.method.lower() == 'post':
+    #         print("we are inside post")
+    #         return [FileUploadParser()]
+    #         # Return default parser for other methods (important!)
+    #     return [JSONParser()]
 
     def get_queryset(self):
         if self.request.user.groups.filter(name='Admin').exists():
@@ -41,6 +57,10 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Product.objects.filter(vendor=self.request.user)
 
 
+#
+# class ProductImageUploadViewSet(viewsets.ModelViewSet):
+#     queryset = ProductImages.objects.all()
+#     serializer_class = ProductImageUploadSerializer
 
 
 class VendorDashboardView(APIView):
@@ -49,7 +69,7 @@ class VendorDashboardView(APIView):
     def get(self, request):
         vendor = request.user
 
-            # Get orders for this vendor
+        # Get orders for this vendor
         orders = Order.objects.filter(vendor=vendor).select_related('user', 'cart')
 
         order_data = []
@@ -65,15 +85,16 @@ class VendorDashboardView(APIView):
                 'total_price': order.total_price,
                 'status': order.status,
                 'items': [
-                        {
-                            'product': item.product.name,
-                            'quantity': item.quantity,
-                            'price': item.product.price,
-                        } for item in items if item.product.vendor == vendor
-                    ]
-                })
+                    {
+                        'product': item.product.name,
+                        'quantity': item.quantity,
+                        'price': item.product.price,
+                    } for item in items if item.product.vendor == vendor
+                ]
+            })
 
         return Response({'orders': order_data})
+
 
 class VendorOrderView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated, IsVendor]  # Ensure the user is authenticated and a vendor
@@ -114,8 +135,3 @@ class VendorOrderView(generics.GenericAPIView):
         return Response({
             'orders': order_details
         })
-
-
-
-
-

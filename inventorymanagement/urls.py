@@ -1,9 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from inventorymanagement.views import ProductViewSet,  VendorOrderView, VendorDashboardView
+from inventorymanagement.views import ProductViewSet, VendorOrderView, VendorDashboardView
+
 router=DefaultRouter()
 router.register(r'products', ProductViewSet, basename='product')
+# router.register('product-images', ProductImageUploadViewSet, basename='product-image')
+
 
 urlpatterns = [path('', include(router.urls)),
                path('vendor-dashboard/', VendorDashboardView.as_view()),

@@ -12,12 +12,17 @@ class Product(models.Model):
     vendor=models.ForeignKey(User,on_delete=models.CASCADE,related_name='products')
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
-
-
+    thumbnail=models.ImageField(upload_to='products/thumbnails/', null=True, blank=True)
 
 
     def __str__(self):
         return self.name
+
+
+
+class ProductImages(models.Model):
+    product=models.ForeignKey(Product,on_delete=models.CASCADE,related_name='images')
+    image=models.ImageField(upload_to='product_images/')
 
 
 
