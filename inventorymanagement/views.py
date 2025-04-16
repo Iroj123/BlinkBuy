@@ -1,14 +1,16 @@
-from django.db.models import Sum
-from rest_framework import permissions, viewsets, generics
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser, FileUploadParser
+
+from rest_framework import permissions, viewsets, generics,filters
+from rest_framework.generics import  ListCreateAPIView
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from authentication.serializers import UserSerializer
 from cart.models import Order, CartItem
-from inventorymanagement.models import Product, ProductImages
-from inventorymanagement.serializers import ProductSerializer
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+from inventorymanagement.models import Product, Category
+from inventorymanagement.serializers import ProductSerializer, OrderSerializer, CategorySerializer
+
 
 class IsVendor(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -41,15 +43,6 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
-    #
-    # def get_parsers(self):
-    #     print("REQUEST:", self.request)
-    #     print("METHOD:", self.request.method)
-    #     if self.request and self.request.method.lower() == 'post':
-    #         print("we are inside post")
-    #         return [FileUploadParser()]
-    #         # Return default parser for other methods (important!)
-    #     return [JSONParser()]
 
     def get_queryset(self):
         if self.request.user.groups.filter(name='Admin').exists():
@@ -57,10 +50,13 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Product.objects.filter(vendor=self.request.user)
 
 
-#
-# class ProductImageUploadViewSet(viewsets.ModelViewSet):
-#     queryset = ProductImages.objects.all()
-#     serializer_class = ProductImageUploadSerializer
+class CategoryCreateView(ListCreateAPIView):
+    queryset = Category.objects.all()  # Define queryset
+    serializer_class = CategorySerializer  # Define the serializer
+    permission_classes = [IsAdmin]  #
+
+
+
 
 
 class VendorDashboardView(APIView):
@@ -68,32 +64,29 @@ class VendorDashboardView(APIView):
 
     def get(self, request):
         vendor = request.user
-
-        # Get orders for this vendor
         orders = Order.objects.filter(vendor=vendor).select_related('user', 'cart')
 
-        order_data = []
+        total_quantity = 0
+        total_revenue = 0
+        product_ids = set()  # to track distinct products sold
+        total_orders = orders.count()  # Count the total number of orders
 
-        print("Vendor:", vendor)
-        print("Orders for vendor:", orders)
 
         for order in orders:
             items = order.cart.items.select_related('product')
-            order_data.append({
-                'order_id': order.id,
-                'customer_email': order.user.email,
-                'total_price': order.total_price,
-                'status': order.status,
-                'items': [
-                    {
-                        'product': item.product.name,
-                        'quantity': item.quantity,
-                        'price': item.product.price,
-                    } for item in items if item.product.vendor == vendor
-                ]
-            })
+            for item in items:
+                if item.product.vendor == vendor:
+                    total_quantity += item.quantity
+                    total_revenue += item.product.price * item.quantity
+                    product_ids.add(item.product.id)
 
-        return Response({'orders': order_data})
+        return Response({
+            'total_orders': total_orders,  # Total number of orders
+
+            'products_sold_count': len(product_ids),        # distinct products sold
+            'total_items_sold': total_quantity,             # total quantity
+            'total_revenue': total_revenue                  # sum of price × quantity
+        })
 
 
 class VendorOrderView(generics.GenericAPIView):
@@ -135,3 +128,26 @@ class VendorOrderView(generics.GenericAPIView):
         return Response({
             'orders': order_details
         })
+
+
+
+
+class ProductSearchView(generics.ListAPIView):
+    queryset = Product.objects.all()
+    permission_classes = [AllowAny]
+    serializer_class = ProductSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name','category']
+
+
+class OrderSearchView(generics.ListAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['order_date', 'total_price', 'status']
+
+class UserSearchView(generics.ListAPIView):
+    queryset = Order.objects.all()
+    serializer_class = UserSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['email', 'phoneno']

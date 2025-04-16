@@ -4,6 +4,13 @@ from django.db import models
 
 User=get_user_model()
 
+
+class Category(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name
+
 class Product(models.Model):
     name=models.CharField(max_length=100)
     description=models.TextField()
@@ -13,6 +20,7 @@ class Product(models.Model):
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     thumbnail=models.ImageField(upload_to='products/thumbnails/', null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
 
 
     def __str__(self):
@@ -23,6 +31,8 @@ class Product(models.Model):
 class ProductImages(models.Model):
     product=models.ForeignKey(Product,on_delete=models.CASCADE,related_name='images')
     image=models.ImageField(upload_to='product_images/')
+
+
 
 
 

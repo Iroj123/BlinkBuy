@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from cart.models import Order
-from inventorymanagement.models import Product, ProductImages
+from inventorymanagement.models import Product, ProductImages, Category
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -14,12 +14,11 @@ class ImageSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    # images=ImageSerializer(many=True)
-    # images = serializers.ListSerializer(child=serializers.ImageField())
+
 
     class Meta:
         model = Product
-        fields = ['name', 'images', 'description', 'stock', 'price', 'created_at', 'updated_at', "thumbnail"]
+        fields = ['name', 'images', 'description','category', 'stock', 'price', 'created_at', 'updated_at', "thumbnail"]
 
     def create(self, validated_data):
         images_data = validated_data.pop('images', [])  # extract image list
@@ -58,7 +57,9 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'cart', 'order_date', 'total_price', 'status']
 
-# class ProductImageUploadSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = ProductImages
-#         fields = ['product', 'image']
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name']

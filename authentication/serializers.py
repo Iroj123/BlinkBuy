@@ -19,8 +19,6 @@ def send_otp(self):
         fail_silently=False,
     )
 
-
-
 class RegistrationSerializer(serializers.ModelSerializer):
 
     password=serializers.CharField(write_only=True)
@@ -44,9 +42,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         if password != re_password:
             raise serializers.ValidationError('Passwords do not match')
         return data
-
-
-
 
 
     def create(self, validated_data):
@@ -84,8 +79,6 @@ class OtpSerializer(serializers.Serializer):
         if user.expiry_otp and user.expiry_otp < now():
             raise serializers.ValidationError("OTP has expired. Please request a new one.")
 
-
-
         return data
 
 
@@ -93,7 +86,6 @@ class LoginSerializer(serializers.ModelSerializer):
     class Meta:
         model=CustomUser
         fields=['email','password']
-
 
     def validate(self,data):
         email=data.get('email')
@@ -113,10 +105,6 @@ class LoginSerializer(serializers.ModelSerializer):
         return user
 
 
-
-
-
-
 class ForgetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -133,13 +121,11 @@ class ForgetPasswordSerializer(serializers.Serializer):
         user.otp = get_random_string(length=6, allowed_chars="0123456789")
         user.expiry_otp = datetime.now() + timedelta(minutes=5)
 
-
         user.save()
 
         # Send OTP email
         send_otp(user)
         return {"message": "OTP sent to email for password reset."}
-
 
 
 class OtpValidationForResetSerializer(serializers.Serializer):
@@ -220,35 +206,10 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.save()
 
 
-
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'firstname','lastname','phoneno','groups']
-
-
-
-# class UserRoleUpdateSerializer(serializers.Serializer):
-#     role = serializers.ChoiceField(choices=["Admin", "Vendor", "User"])
-#
-#     def update(self, instance, validated_data):
-#         role = validated_data["role"]
-#
-#         # Remove from all role groups
-#         role_groups = ["Admin", "Vendor", "User"]
-#         for group_name in role_groups:
-#             group = Group.objects.get(name=group_name)
-#             instance.groups.remove(group)
-#
-#         # Add to the selected group
-#         new_group = Group.objects.get(name=role)
-#         instance.groups.add(new_group)
-#
-#         instance.save()
-#         return instance
-
 
 
 class VendorRegistrationSerializer(serializers.ModelSerializer):
