@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
 from django.utils.timezone import now
 from rest_framework import serializers

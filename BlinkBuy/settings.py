@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'cart.apps.CartConfig',
     'dashboard',
     'vendor',
+    'comment',
 
 ]
 

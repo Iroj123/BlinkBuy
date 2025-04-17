@@ -31,10 +31,17 @@ class CartItem(models.Model):
         return f"{self.product.name} (x{self.quantity})"
 
 class Order(models.Model):
+
+    STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Out for delivery', 'Out for delivery'),
+        ('Delivered', 'Delivered'),
+    )
+
     cart = models.OneToOneField(Cart, on_delete=models.CASCADE)
     order_date = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=50, default="Pending")
+    status = models.CharField(choices=STATUS_CHOICES,max_length=50, default="Pending")
     vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vendor_orders',blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='customer_orders',blank=True, null=True)
 
