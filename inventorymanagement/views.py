@@ -1,5 +1,5 @@
-
-from rest_framework import permissions, viewsets, generics,filters
+from django.shortcuts import get_object_or_404
+from rest_framework import permissions, viewsets, generics, filters, status
 from rest_framework.generics import  ListCreateAPIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import AllowAny
@@ -91,7 +91,7 @@ class VendorDashboardView(APIView):
 
 class VendorOrderView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated, IsVendor]  # Ensure the user is authenticated and a vendor
-
+    serializer_class = OrderSerializer
     def get(self, request):
         vendor_user = request.user
 
@@ -102,7 +102,7 @@ class VendorOrderView(generics.GenericAPIView):
 
         for order in orders:
             # For each order, get all cart items (products bought in the order)
-            cart_items = CartItem.objects.filter(order=order)
+            cart_items = order.cart.items.all()
             products = []
 
             for item in cart_items:
@@ -110,7 +110,7 @@ class VendorOrderView(generics.GenericAPIView):
                 products.append({
                     'product_name': product.name,
                     'quantity': item.quantity,
-                    'price': item.price
+                    'price': item.total_price()
                 })
 
             # Assuming 'user' field in Order is the customer placing the order
@@ -118,16 +118,29 @@ class VendorOrderView(generics.GenericAPIView):
 
             order_details.append({
                 'order_id': order.id,
-                'user_name': f"{customer.first_name} {customer.last_name}",  # Display user's full name
+                'user_name': f"{customer.firstname} {customer.lastname}",  # Display user's full name
                 'order_total': order.total_price,
                 'status': order.status,
                 'products': products,
-                'created_at': order.created_at
-            })
 
+            })
         return Response({
             'orders': order_details
         })
+
+    def patch(self, request, *args, **kwargs):
+        order_id = request.data.get('order_id')
+        if not order_id:
+            return Response({'error': 'order_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch the order belonging to this vendor
+        order = get_object_or_404(Order, id=order_id, vendor=request.user)
+
+        serializer = self.get_serializer(order, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Order status updated successfully.', 'order': serializer.data})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 

@@ -53,9 +53,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
         user.is_verified = False
         user.otp = get_random_string(length=6, allowed_chars="0123456789")
-        user.expiry_otp = datetime.now() + timedelta(minutes=5)
+        user.expiry_otp = now() + timedelta(minutes=5)
         user.save()
+
         send_otp(user)
+
         return user
 
 
