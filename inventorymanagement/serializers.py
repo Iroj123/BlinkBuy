@@ -14,11 +14,14 @@ class ImageSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-
+    in_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ['name', 'images', 'description','category', 'stock', 'price', 'created_at', 'updated_at', "thumbnail"]
+        fields = ['name', 'images', 'description','category', 'stock', 'price', 'created_at', 'updated_at', "thumbnail",'in_stock']
+
+    def get_in_stock(self, obj):
+        return obj.stock > 0
 
     def create(self, validated_data):
         images_data = validated_data.pop('images', [])  # extract image list

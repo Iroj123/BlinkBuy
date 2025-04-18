@@ -26,6 +26,9 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    def is_in_stock(self):
+        return self.stock > 0
+
 
 
 class ProductImages(models.Model):

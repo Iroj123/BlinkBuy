@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from django.contrib.admin import action
+from django.db import transaction
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 
@@ -78,6 +79,9 @@ class CheckoutViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CheckoutSerializer
     queryset = Order.objects.all()
+
+    @transaction.atomic
+
     def create(self, request):
         cart = Cart.objects.filter(user=request.user, is_checked_out=False).first()
         if not cart:
@@ -89,6 +93,12 @@ class CheckoutViewSet(viewsets.ModelViewSet):
             # Group items by vendor
         vendor_items = defaultdict(list)
         for item in cart.items.select_related('product'):
+
+            if item.product.stock < item.quantity:
+                return Response({
+                    'detail': f"'{item.product.name}' has only {item.product.stock} in stock."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             vendor = item.product.vendor
             vendor_items[vendor].append(item)
         created_orders = []
@@ -100,6 +110,12 @@ class CheckoutViewSet(viewsets.ModelViewSet):
                 total_price=sum([item.product.price * item.quantity for item in items]),
                 status='Pending'
             )
+
+            for item in items:
+                product = item.product
+                product.stock -= item.quantity
+                product.save()
+
             created_orders.append(order)
 
         cart.is_checked_out = True

@@ -21,6 +21,7 @@ from django.urls import path, include, re_path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
+from rest_framework.authentication import SessionAuthentication
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -33,13 +34,15 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    # authentication_classes=(SessionAuthentication,),  # Enable Django session login
+
 )
 
 urlpatterns = [
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 
-                  path('',include('authentication.urls')),
+    path('',include('authentication.urls')),
     path('manage/',include('inventorymanagement.urls')),
     path('cart/', include('cart.urls')),
     path('admin/', admin.site.urls),
