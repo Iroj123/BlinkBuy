@@ -12,6 +12,10 @@ from .serializers import CartSerializer, RemoveFromCartSerializer, CheckoutSeria
 class CartViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CartSerializer
+
+    def get_queryset(self):
+        pass
+
     def list(self, request):
         cart, created = Cart.objects.get_or_create(user=request.user)
         serializer = CartSerializer(cart)
@@ -61,6 +65,9 @@ class AddToCartViewSet(viewsets.GenericViewSet):
 class RemoveFromCartViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = RemoveFromCartSerializer
+
+    def get_queryset(self):
+        pass
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
