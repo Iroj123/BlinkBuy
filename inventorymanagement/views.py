@@ -39,16 +39,35 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     parser_classes = [MultiPartParser,FormParser, JSONParser]
-    permission_classes = [IsVendor | IsAdmin]
+    # permission_classes = [IsVendor | IsAdmin]
+
+    def get_permissions(self):
+        # Allow anyone to read (GET, HEAD, OPTIONS)
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            return [AllowAny()]
+        # Only vendors or admins can write
+        return [IsVendor() | IsAdmin()]
 
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
 
     def get_queryset(self):
-        if self.request.user.groups.filter(name='Admin').exists():
-            return Product.objects.all()
-        return Product.objects.filter(vendor=self.request.user)
+        user = self.request.user
 
+        # If the user is unauthenticated (AnonymousUser), show all products
+        if not user.is_authenticated:
+            return Product.objects.all()
+
+        # If the user is in Admin group, show all products
+        if user.groups.filter(name='Admin').exists():
+            return Product.objects.all()
+
+        # If the user is a vendor, show only their products
+        if user.groups.filter(name='Vendor').exists():
+            return Product.objects.filter(vendor=user)
+
+        # If the user is authenticated but not a vendor or admin (just a regular user)
+        return Product.objects.all()
 
 class CategoryCreateView(ListCreateAPIView):
     queryset = Category.objects.all()  # Define queryset

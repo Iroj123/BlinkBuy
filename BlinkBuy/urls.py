@@ -49,5 +49,6 @@ urlpatterns = [
     path('dashboard/',include('dashboard.urls')),
     path('vendor/', include('vendor.urls')),
     path('comment/',include('comment.urls')),
+    path('reviews/',include('reviews.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

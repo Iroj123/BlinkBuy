@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from cart.models import Order
 from inventorymanagement.models import Product, ProductImages, Category
+from reviews.serializers import ReviewSerializer
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -15,10 +16,11 @@ class ImageSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     in_stock = serializers.SerializerMethodField()
-
+    average_rating = serializers.SerializerMethodField()
+    reviews = ReviewSerializer(many=True, read_only=True)
     class Meta:
         model = Product
-        fields = ['name', 'images', 'description','category', 'stock', 'price', 'created_at', 'updated_at', "thumbnail",'in_stock']
+        fields = ['name', 'images', 'description','category', 'stock', 'price', 'created_at', 'updated_at', "thumbnail",'in_stock','average_rating','reviews']
 
     def get_in_stock(self, obj):
         return obj.stock > 0
@@ -47,6 +49,9 @@ class ProductSerializer(serializers.ModelSerializer):
         representation = super(ProductSerializer, self).to_representation(instance)
         representation['images'] = ImageSerializer(instance.images.all(), context=self.context, many=True).data
         return representation
+
+    def get_average_rating(self, obj):
+        return obj.average_rating()
 
 
 

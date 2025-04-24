@@ -29,6 +29,12 @@ class Product(models.Model):
     def is_in_stock(self):
         return self.stock > 0
 
+    def average_rating(self):
+        reviews = self.reviews.all()
+        if reviews.exists():
+            return round(sum([review.rating for review in reviews]) / reviews.count(), 1)
+        return 0.0
+
 
 
 class ProductImages(models.Model):
