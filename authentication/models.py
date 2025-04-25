@@ -58,6 +58,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
+    def verify_otp(self):
+        self.is_verified = True
+        self.otp = None
+        self.expiry_otp = None
+        self.save()
+
 
 
 
