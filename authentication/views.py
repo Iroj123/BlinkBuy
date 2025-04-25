@@ -106,6 +106,8 @@ class VerifyOtpView(GenericAPIView):
                 return Response({"message": "OTP verified. You may now reset your password."}, status=status.HTTP_200_OK)
             except CustomUser.DoesNotExist:
                 return Response({"error": "Invalid email or OTP."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class ResetPasswordView(GenericAPIView):
