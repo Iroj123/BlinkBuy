@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets, generics, filters, status
 from rest_framework.generics import  ListCreateAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -34,12 +35,29 @@ class IsOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user or request.user.groups.filter(name='Admin').exists()
 
+class PageNumberPagination(PageNumberPagination):
+    page_size=10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+    def get_paginated_response(self, data):
+        return Response({
+            'links': {
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link()
+            },
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'current_page': self.page.number,
+            'results': data
+        })
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     parser_classes = [MultiPartParser,FormParser, JSONParser]
     # permission_classes = [IsVendor | IsAdmin]
+    pagination_class = PageNumberPagination
 
     def get_permissions(self):
         # Allow anyone to read (GET, HEAD, OPTIONS)
