@@ -64,7 +64,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
             return [AllowAny()]
         # Only vendors or admins can write
-        return [IsVendor() | IsAdmin()]
+        return [IsVendor()]
 
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
@@ -90,8 +90,11 @@ class ProductViewSet(viewsets.ModelViewSet):
 class CategoryCreateView(ListCreateAPIView):
     queryset = Category.objects.all()  # Define queryset
     serializer_class = CategorySerializer  # Define the serializer
-    permission_classes = [IsAdmin]  #
 
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAdmin()]
+        return [AllowAny()]
 
 
 
@@ -135,35 +138,35 @@ class VendorOrderView(generics.GenericAPIView):
         # Get all orders for this vendor
         orders = Order.objects.filter(vendor=vendor_user)
 
+        if not orders.exists():
+            return Response({'message': 'No orders found'}, status=status.HTTP_404_NOT_FOUND)
+
         order_details = []
 
         for order in orders:
-            # For each order, get all cart items (products bought in the order)
-            cart_items = order.cart.items.all()
-            products = []
+            order_items = order.items.select_related('product')  # OrderItem relation
 
-            for item in cart_items:
-                product = item.product
-                products.append({
-                    'product_name': product.name,
+            products = [
+                {
+                    'product_name': item.product.name,
                     'quantity': item.quantity,
-                    'price': item.total_price()
-                })
+                    'price': item.get_total_price()
+                }
+                for item in order_items
+            ]
 
-            # Assuming 'user' field in Order is the customer placing the order
-            customer = order.user  # This assumes `order.user` is the customer (user) who placed the order
+            customer = order.user  # Customer who placed the order
 
             order_details.append({
                 'order_id': order.id,
-                'user_name': f"{customer.firstname} {customer.lastname}",  # Display user's full name
+                'user_name': f"{customer.firstname} {customer.lastname}",
                 'order_total': order.total_price,
                 'status': order.status,
                 'products': products,
-
+                'order_date': order.order_date
             })
-        return Response({
-            'orders': order_details
-        })
+
+        return Response({'orders': order_details}, status=200)
 
     def patch(self, request, *args, **kwargs):
         order_id = request.data.get('order_id')

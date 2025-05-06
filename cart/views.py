@@ -5,7 +5,7 @@ from django.db import transaction
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 
-from .models import Cart, CartItem, Product, Order
+from .models import Cart, CartItem, Product, Order, OrderItem
 from .serializers import CartSerializer, RemoveFromCartSerializer, CheckoutSerializer, AddToCartSerializer
 
 
@@ -90,7 +90,7 @@ class CheckoutViewSet(viewsets.ModelViewSet):
     @transaction.atomic
 
     def create(self, request):
-        cart = Cart.objects.filter(user=request.user, is_checked_out=False).first()
+        cart = Cart.objects.filter(user=request.user).first()
         if not cart:
             return Response({'detail': 'No cart found or cart is already checked out'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -123,10 +123,17 @@ class CheckoutViewSet(viewsets.ModelViewSet):
                 product.stock -= item.quantity
                 product.save()
 
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=item.quantity,
+                    price=product.price  # store current price
+            )
+
             created_orders.append(order)
 
-        cart.is_checked_out = True
         cart.save()
+        cart.items.all().delete()  # ✅ Clear the items if using FK
 
         serializer = self.get_serializer(created_orders, many=True)
         return Response({
