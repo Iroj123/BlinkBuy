@@ -59,11 +59,10 @@ class ProductSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     from cart.serializers import CartSerializer
 
-    cart = CartSerializer(read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'cart', 'order_date', 'total_price', 'status']
+        fields = ['id', 'order_date', 'total_price', 'status']
 
 
 

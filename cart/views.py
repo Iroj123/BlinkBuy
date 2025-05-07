@@ -88,19 +88,16 @@ class CheckoutViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
 
     @transaction.atomic
-
     def create(self, request):
         cart = Cart.objects.filter(user=request.user).first()
         if not cart:
-            return Response({'detail': 'No cart found or cart is already checked out'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'No cart found'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not cart.items.exists():
             return Response({'detail': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Group items by vendor
         vendor_items = defaultdict(list)
         for item in cart.items.select_related('product'):
-
             if item.product.stock < item.quantity:
                 return Response({
                     'detail': f"'{item.product.name}' has only {item.product.stock} in stock."
@@ -108,13 +105,14 @@ class CheckoutViewSet(viewsets.ModelViewSet):
 
             vendor = item.product.vendor
             vendor_items[vendor].append(item)
+
         created_orders = []
         for vendor, items in vendor_items.items():
             order = Order.objects.create(
                 cart=cart,
                 vendor=vendor,
                 user=request.user,
-                total_price=sum([item.product.price * item.quantity for item in items]),
+                total_price=sum(item.product.price * item.quantity for item in items),
                 status='Pending'
             )
 
@@ -127,20 +125,19 @@ class CheckoutViewSet(viewsets.ModelViewSet):
                     order=order,
                     product=product,
                     quantity=item.quantity,
-                    price=product.price  # store current price
-            )
+                    price=product.price
+                )
 
-            created_orders.append(order)
+            created_orders.append(order)  # ✅ Moved inside vendor loop
 
-        cart.save()
-        cart.items.all().delete()  # ✅ Clear the items if using FK
+        cart.items.all().delete()  # ✅ clear cart
+        cart.delete()
 
         serializer = self.get_serializer(created_orders, many=True)
         return Response({
             'message': 'Order(s) placed successfully.',
             'orders': serializer.data
         }, status=status.HTTP_201_CREATED)
-
 
 
 

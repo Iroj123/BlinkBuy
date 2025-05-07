@@ -169,7 +169,7 @@ class VendorOrderView(generics.GenericAPIView):
         return Response({'orders': order_details}, status=200)
 
     def patch(self, request, *args, **kwargs):
-        order_id = request.data.get('order_id')
+        order_id = kwargs.get('order_id')
         if not order_id:
             return Response({'error': 'order_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -182,7 +182,17 @@ class VendorOrderView(generics.GenericAPIView):
             return Response({'message': 'Order status updated successfully.', 'order': serializer.data})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, *args, **kwargs):
+        order_id = kwargs.get('pk')  # Get the 'order_id' from the URL parameter
+        if not order_id:
+            return Response({'error': 'order_id is required in the URL'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Ensure the order belongs to this vendor
+        order = get_object_or_404(Order, id=order_id, vendor=request.user)
+
+        order.delete()  # Delete the order
+
+        return Response({'message': 'Order deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ProductSearchView(generics.ListAPIView):
