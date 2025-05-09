@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from authentication.serializers import UserSerializer
 
-from cart.models import Order, CartItem
+from cart.models import Order, CartItem, OrderItem
 from inventorymanagement.models import Product
 from inventorymanagement.serializers import OrderSerializer, ProductSerializer
 from inventorymanagement.views import IsAdmin
@@ -38,13 +38,17 @@ class AdminDashboardView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def get(self, request):
-        total_users = User.objects.count()
+        total_users = User.objects.filter(groups__name='User').count()
+        total_vendors = User.objects.filter(groups__name='Vendor').count()
+        total_products=Product.objects.all().count()
         total_orders = Order.objects.count()
         total_revenue = Order.objects.aggregate(total=Sum('total_price'))['total'] or 0
-        total_products_ordered = CartItem.objects.aggregate(total=Sum('quantity'))['total'] or 0
+        total_products_ordered = OrderItem.objects.aggregate(total=Sum('quantity'))['total'] or 0
 
         return Response({
             'total_users': total_users,
+            'total_vendors': total_vendors,
+            'total_products': total_products,
             'total_orders': total_orders,
             'total_revenue': total_revenue,
             'total_products_ordered': total_products_ordered
