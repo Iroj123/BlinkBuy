@@ -29,8 +29,12 @@ class IsUser(permissions.BasePermission):
                 request.user.is_authenticated and
                 not request.user.groups.filter(name__in=['Admin', 'Vendor']).exists()
         )
-
-
+class IsAdminOrIsVendor(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return (
+                request.user.is_authenticated and
+                request.user.groups.filter(name__in=['Admin', 'Vendor']).exists()
+        )
 class IsOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user or request.user.groups.filter(name='Admin').exists()
@@ -64,7 +68,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
             return [AllowAny()]
         # Only vendors or admins can write
-        return [IsVendor()]
+        return [IsAdminOrIsVendor()]
 
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
