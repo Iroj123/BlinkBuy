@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.contrib.auth import get_user_model
 from django.utils.crypto import get_random_string
 from django.utils.timezone import now
@@ -17,6 +18,16 @@ def send_otp(self):
         [self.email],
         fail_silently=False,
     )
+
+
+class CustomRegisterSerializer(RegisterSerializer):
+    username = None  # This explicitly removes it
+
+    def get_cleaned_data(self):
+        data = super().get_cleaned_data()
+        data.pop('username', None)  # Safely remove if present
+        return data
+
 
 class RegistrationSerializer(serializers.ModelSerializer):
 
@@ -85,6 +96,8 @@ class OtpSerializer(serializers.Serializer):
 
 class LoginSerializer(serializers.ModelSerializer):
     class Meta:
+        ref_name = "CustomLoginSerializer"
+
         model=CustomUser
         fields=['email','password']
 

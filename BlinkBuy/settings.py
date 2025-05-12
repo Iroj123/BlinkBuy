@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-631ebc5%a_0ygm@9x7gfw-c2a6-xr81lr8p1h(u@o_+1#xvefo
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -44,6 +44,16 @@ INSTALLED_APPS = [
     'drf_yasg',
     'corsheaders',
 
+    'django.contrib.sites',
+    'rest_framework.authtoken',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+
+
 
 
 
@@ -58,6 +68,7 @@ INSTALLED_APPS = [
 
 
 ]
+SITE_ID = 1
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -68,6 +79,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -221,4 +233,35 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+REST_USE_JWT = True
+
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': '1073265180877-5rhf3ebg3mkjp16ts171g5imps2u9ji7.apps.googleusercontent.com',
+            'secret': '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',
+            'key': ''
+        }
+    }
+}
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # default
+    'allauth.account.auth_backends.AuthenticationBackend',  # allauth
+]
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+
+REST_AUTH_REGISTER_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'authentication.serializers.CustomRegisterSerializer',
+}
+
 
