@@ -97,7 +97,7 @@ class CategoryCreateView(ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAdmin()]
+            return [IsAdminOrIsVendor()]
         return [AllowAny()]
 
 
