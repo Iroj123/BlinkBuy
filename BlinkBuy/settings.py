@@ -212,8 +212,8 @@ SWAGGER_SETTINGS = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Set token expiration
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Set refresh token expiration
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),  # Set token expiration
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # Set refresh token expiration
 }
 
 MEDIA_URL = '/media/'
