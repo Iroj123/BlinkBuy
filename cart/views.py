@@ -1,16 +1,21 @@
 from collections import defaultdict
 
 from django.contrib.admin import action
+from django.db import transaction
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 
-from .models import Cart, CartItem, Product, Order
+from .models import Cart, CartItem, Product, Order, OrderItem
 from .serializers import CartSerializer, RemoveFromCartSerializer, CheckoutSerializer, AddToCartSerializer
 
 
 class CartViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CartSerializer
+
+    def get_queryset(self):
+        pass
+
     def list(self, request):
         cart, created = Cart.objects.get_or_create(user=request.user)
         serializer = CartSerializer(cart)
@@ -61,6 +66,9 @@ class RemoveFromCartViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = RemoveFromCartSerializer
 
+    def get_queryset(self):
+        pass
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -78,39 +86,58 @@ class CheckoutViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CheckoutSerializer
     queryset = Order.objects.all()
+
+    @transaction.atomic
     def create(self, request):
-        cart = Cart.objects.filter(user=request.user, is_checked_out=False).first()
+        cart = Cart.objects.filter(user=request.user).first()
         if not cart:
-            return Response({'detail': 'No cart found or cart is already checked out'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'No cart found'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not cart.items.exists():
             return Response({'detail': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Group items by vendor
         vendor_items = defaultdict(list)
         for item in cart.items.select_related('product'):
+            if item.product.stock < item.quantity:
+                return Response({
+                    'detail': f"'{item.product.name}' has only {item.product.stock} in stock."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             vendor = item.product.vendor
             vendor_items[vendor].append(item)
+
         created_orders = []
         for vendor, items in vendor_items.items():
             order = Order.objects.create(
                 cart=cart,
                 vendor=vendor,
                 user=request.user,
-                total_price=sum([item.product.price * item.quantity for item in items]),
+                total_price=sum(item.product.price * item.quantity for item in items),
                 status='Pending'
             )
-            created_orders.append(order)
 
-        cart.is_checked_out = True
-        cart.save()
+            for item in items:
+                product = item.product
+                product.stock -= item.quantity
+                product.save()
+
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=item.quantity,
+                    price=product.price
+                )
+
+            created_orders.append(order)  # ✅ Moved inside vendor loop
+
+        cart.items.all().delete()  # ✅ clear cart
+        cart.delete()
 
         serializer = self.get_serializer(created_orders, many=True)
         return Response({
             'message': 'Order(s) placed successfully.',
             'orders': serializer.data
         }, status=status.HTTP_201_CREATED)
-
 
 
 

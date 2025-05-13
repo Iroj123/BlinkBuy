@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
 from django.utils.timezone import now
 from rest_framework import serializers
@@ -18,8 +17,6 @@ def send_otp(self):
         [self.email],
         fail_silently=False,
     )
-
-
 
 class RegistrationSerializer(serializers.ModelSerializer):
 
@@ -46,9 +43,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return data
 
 
-
-
-
     def create(self, validated_data):
         validated_data.pop('re_password',None)
         user=get_user_model().objects.create_user( email=validated_data['email'],
@@ -59,9 +53,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
         user.is_verified = False
         user.otp = get_random_string(length=6, allowed_chars="0123456789")
-        user.expiry_otp = datetime.now() + timedelta(minutes=5)
+        user.expiry_otp = now() + timedelta(minutes=5)
         user.save()
+
         send_otp(user)
+
         return user
 
 
@@ -84,8 +80,6 @@ class OtpSerializer(serializers.Serializer):
         if user.expiry_otp and user.expiry_otp < now():
             raise serializers.ValidationError("OTP has expired. Please request a new one.")
 
-
-
         return data
 
 
@@ -93,7 +87,6 @@ class LoginSerializer(serializers.ModelSerializer):
     class Meta:
         model=CustomUser
         fields=['email','password']
-
 
     def validate(self,data):
         email=data.get('email')
@@ -113,10 +106,6 @@ class LoginSerializer(serializers.ModelSerializer):
         return user
 
 
-
-
-
-
 class ForgetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -133,13 +122,11 @@ class ForgetPasswordSerializer(serializers.Serializer):
         user.otp = get_random_string(length=6, allowed_chars="0123456789")
         user.expiry_otp = datetime.now() + timedelta(minutes=5)
 
-
         user.save()
 
         # Send OTP email
         send_otp(user)
         return {"message": "OTP sent to email for password reset."}
-
 
 
 class OtpValidationForResetSerializer(serializers.Serializer):
@@ -220,35 +207,10 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.save()
 
 
-
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'firstname','lastname','phoneno','groups']
-
-
-
-# class UserRoleUpdateSerializer(serializers.Serializer):
-#     role = serializers.ChoiceField(choices=["Admin", "Vendor", "User"])
-#
-#     def update(self, instance, validated_data):
-#         role = validated_data["role"]
-#
-#         # Remove from all role groups
-#         role_groups = ["Admin", "Vendor", "User"]
-#         for group_name in role_groups:
-#             group = Group.objects.get(name=group_name)
-#             instance.groups.remove(group)
-#
-#         # Add to the selected group
-#         new_group = Group.objects.get(name=role)
-#         instance.groups.add(new_group)
-#
-#         instance.save()
-#         return instance
-
 
 
 class VendorRegistrationSerializer(serializers.ModelSerializer):

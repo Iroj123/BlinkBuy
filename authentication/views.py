@@ -35,11 +35,8 @@ class VerifyEmailView(GenericAPIView):
         try:
             user = CustomUser.objects.get(email=email, otp=otp)
 
+            user.verify_otp()
 
-            user.is_verified = True
-            user.otp = None  # Clear the verification code after success
-            user.expiry_otp = None  # Clear expiry after success
-            user.save()
             return Response({"message": "Email verified successfully!"}, status=status.HTTP_200_OK)
 
         except CustomUser.DoesNotExist:
@@ -104,13 +101,12 @@ class VerifyOtpView(GenericAPIView):
             try:
                 user = CustomUser.objects.get(email=email, otp=otp)
                 request.session['otp_verified'] = True
-                user.is_verified = True
-                user.otp = None  # Clear the verification code after success
-                user.expiry_otp = None  # Clear expiry after success
-                user.save()
+                user.verify_otp()
+
                 return Response({"message": "OTP verified. You may now reset your password."}, status=status.HTTP_200_OK)
             except CustomUser.DoesNotExist:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid email or OTP."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 

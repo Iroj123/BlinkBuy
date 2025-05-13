@@ -53,10 +53,15 @@ INSTALLED_APPS = [
     'cart.apps.CartConfig',
     'dashboard',
     'vendor',
+    'comment',
+    'reviews',
+
 
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -71,7 +76,7 @@ ROOT_URLCONF = 'BlinkBuy.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -163,29 +168,57 @@ EMAIL_HOST_PASSWORD = "lefq wqlz iihi nxtw"
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # 'rest_framework.authentication.SessionAuthentication',
-        # 'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+         'rest_framework.authentication.BasicAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
+'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '50/min',   # 10 requests per minute for unauthenticated users
+        'user': '200/min',  # 100 requests per minute for authenticated users
+    }
+
 }
 
 
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
+        'Basic': {
+            'type': 'basic'
+        },
         'Bearer': {
             'type': 'apiKey',
             'name': 'Authorization',
             'in': 'header',
             'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer <your_token>"'
         }
-    }
+    },
+    'USE_SESSION_AUTH': True,  # Enable session auth
+    'LOGIN_URL': 'rest_framework:login',
+    'LOGOUT_URL': 'rest_framework:logout',
+    'PERSIST_AUTH': True,
+    'REFETCH_SCHEMA_WITH_AUTH': True,
+    'REFETCH_SCHEMA_ON_LOGOUT': True,
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Set token expiration
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Set refresh token expiration
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),  # Set token expiration
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # Set refresh token expiration
 }
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+

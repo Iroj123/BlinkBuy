@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="blinkbuy@localhost" uuid="b442c822-6d8b-4872-9c59-84ad4e5c0331">
+    <data-source source="LOCAL" name="blinkbuy@localhost" uuid="c0d3e78b-8e11-4059-aa1f-eaabd892aac7">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
