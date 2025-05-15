@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'corsheaders',
+    'channels',
 
 
 
@@ -55,6 +56,7 @@ INSTALLED_APPS = [
     'vendor',
     'comment',
     'reviews',
+    'chat',
 
 
 ]
@@ -222,3 +224,14 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+
+ASGI_APPLICATION = 'BlinkBuy.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
