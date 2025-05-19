@@ -54,6 +54,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "message": message,
                 "sender_id": sender.id,
                 "recipient_id": recipient.id,
+                "sender_name": sender.firstname,
+                "recipient_name": recipient.firstname,
             }
         )
 
@@ -62,6 +64,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "message": event["message"],
             "sender_id": event["sender_id"],
             "recipient_id": event["recipient_id"],
+            "sender_name": event["sender_name"],
+            "recipient_name": event["recipient_name"],
         }))
 
     @sync_to_async
