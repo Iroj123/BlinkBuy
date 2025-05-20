@@ -30,14 +30,3 @@ class CreateChatView(APIView):
         except User.DoesNotExist:
             return Response({"error": "Vendor not found"}, status=404)
 
-        if not vendor.groups.filter(name="Vendor").exists():
-            return Response({"error": "User is not a vendor"}, status=400)
-
-        # Check if chat already exists
-        chat, created = Chat.objects.get_or_create(user=request.user, vendor=vendor)
-        print("Chat created:", created)
-
-        return Response({
-            "chat_id": chat.id,
-            "created": created
-        })

@@ -22,7 +22,7 @@ class RegisterView(GenericAPIView):
         if serializer.is_valid():
             user=serializer.save()
             return Response({'message': 'User registered. Please check your email for OTP.'}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyEmailView(GenericAPIView):
