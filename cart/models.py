@@ -38,7 +38,7 @@ class Order(models.Model):
         ('Delivered', 'Delivered'),
     )
 
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    # cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     order_date = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(choices=STATUS_CHOICES,max_length=50, default="Pending")

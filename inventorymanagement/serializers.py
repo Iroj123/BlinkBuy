@@ -57,9 +57,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    from cart.serializers import CartSerializer
-
-
     class Meta:
         model = Order
         fields = ['id', 'order_date', 'total_price', 'status']

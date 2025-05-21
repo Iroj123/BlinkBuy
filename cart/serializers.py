@@ -1,7 +1,7 @@
 
 from rest_framework import serializers
 
-from cart.models import CartItem, Cart, Order
+from cart.models import CartItem, Cart, Order, OrderItem
 from inventorymanagement.serializers import ProductSerializer
 
 
@@ -30,9 +30,19 @@ class CartSerializer(serializers.ModelSerializer):
 class RemoveFromCartSerializer(serializers.Serializer):
     cart_item_id = serializers.IntegerField()
 
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product', 'product_name', 'quantity', 'price']
+
 class CheckoutSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)  # use related_name='items'
+
     class Meta:
         model = Order
-        fields = ['cart']
+        fields = ['id', 'order_date', 'vendor', 'total_price', 'status', 'items']
+
 
 
