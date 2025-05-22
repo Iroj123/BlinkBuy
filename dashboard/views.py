@@ -19,7 +19,7 @@ class UserListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
 class OrderListView(generics.ListAPIView):
-    queryset = Order.objects.select_related('cart__user').prefetch_related('cart__items__product')
+    queryset = Order.objects.select_related('user').prefetch_related('items__product')
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 

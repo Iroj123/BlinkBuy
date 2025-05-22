@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from cart.models import Order
-from inventorymanagement.models import Product, ProductImages, Category
+from inventorymanagement.models import Product, ProductImages, Category, SubCategory
 from reviews.serializers import ReviewSerializer
 
 
@@ -20,7 +20,7 @@ class ProductSerializer(serializers.ModelSerializer):
     reviews = ReviewSerializer(many=True, read_only=True)
     class Meta:
         model = Product
-        fields = ['name', 'images', 'description','category', 'stock', 'price', 'created_at', 'updated_at', "thumbnail",'in_stock','average_rating','reviews']
+        fields = ['name', 'images', 'description','subcategory', 'stock', 'price', 'created_at', 'updated_at', "thumbnail",'in_stock','average_rating','reviews']
 
     def get_in_stock(self, obj):
         return obj.stock > 0
@@ -57,16 +57,21 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    from cart.serializers import CartSerializer
-
-
     class Meta:
         model = Order
         fields = ['id', 'order_date', 'total_price', 'status']
 
 
 
+
+class SubCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubCategory
+        fields = '__all__'
+
 class CategorySerializer(serializers.ModelSerializer):
+    subcategories = SubCategorySerializer(many=True, read_only=True)
+
     class Meta:
         model = Category
-        fields = ['id', 'name']
+        fields = ['id', 'name','subcategories']
