@@ -5,6 +5,7 @@ from django.db import transaction
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 
+from inventorymanagement.views import IsOwner
 from .models import Cart, CartItem, Product, Order, OrderItem
 from .serializers import CartSerializer, RemoveFromCartSerializer, CheckoutSerializer, AddToCartSerializer
 
@@ -83,7 +84,7 @@ class RemoveFromCartViewSet(viewsets.ModelViewSet):
 
 
 class CheckoutViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
     serializer_class = CheckoutSerializer
     queryset = Order.objects.all()
 
@@ -107,9 +108,10 @@ class CheckoutViewSet(viewsets.ModelViewSet):
             vendor_items[vendor].append(item)
 
         created_orders = []
+        print("Vendor items:", vendor_items)
+
         for vendor, items in vendor_items.items():
             order = Order.objects.create(
-                cart=cart,
                 vendor=vendor,
                 user=request.user,
                 total_price=sum(item.product.price * item.quantity for item in items),
@@ -128,16 +130,18 @@ class CheckoutViewSet(viewsets.ModelViewSet):
                     price=product.price
                 )
 
-            created_orders.append(order)  # ✅ Moved inside vendor loop
+            created_orders.append(order)
 
-        cart.items.all().delete()  # ✅ clear cart
-        cart.delete()
+
 
         serializer = self.get_serializer(created_orders, many=True)
         return Response({
             'message': 'Order(s) placed successfully.',
             'orders': serializer.data
         }, status=status.HTTP_201_CREATED)
+
+        cart.items.all().delete()
+        cart.delete()
 
 
 

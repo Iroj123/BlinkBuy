@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets, generics, filters, status
-from rest_framework.generics import  ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, GenericAPIView
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import AllowAny
@@ -9,8 +10,9 @@ from rest_framework.views import APIView
 
 from authentication.serializers import UserSerializer
 from cart.models import Order, CartItem
-from inventorymanagement.models import Product, Category
-from inventorymanagement.serializers import ProductSerializer, OrderSerializer, CategorySerializer
+from inventorymanagement.models import Product, Category, SubCategory
+from inventorymanagement.serializers import ProductSerializer, OrderSerializer, CategorySerializer, \
+    SubCategorySerializer
 
 
 class IsVendor(permissions.BasePermission):
@@ -91,14 +93,19 @@ class ProductViewSet(viewsets.ModelViewSet):
         # If the user is authenticated but not a vendor or admin (just a regular user)
         return Product.objects.all()
 
-class CategoryCreateView(ListCreateAPIView):
-    queryset = Category.objects.all()  # Define queryset
-    serializer_class = CategorySerializer  # Define the serializer
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
     def get_permissions(self):
         if self.request.method == 'POST':
             return [IsAdminOrIsVendor()]
         return [AllowAny()]
+
+class SubCategoryViewSet(viewsets.ModelViewSet):
+    queryset = SubCategory.objects.all()
+    serializer_class = SubCategorySerializer
+    permission_classes = [permissions.AllowAny]
 
 
 
