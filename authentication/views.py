@@ -21,6 +21,10 @@ class RegisterView(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user=serializer.save()
+
+            user_group, created = Group.objects.get_or_create(name='User')
+            user.groups.add(user_group)
+
             return Response({'message': 'User registered. Please check your email for OTP.'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 

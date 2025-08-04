@@ -1,3 +1,4 @@
+from django.db.models import Sum, F
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets, generics, filters, status
 from rest_framework.generics import ListCreateAPIView, GenericAPIView
@@ -9,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from authentication.serializers import UserSerializer
-from cart.models import Order, CartItem
+from cart.models import Order, CartItem, OrderItem
 from inventorymanagement.models import Product, Category, SubCategory
 from inventorymanagement.serializers import ProductSerializer, OrderSerializer, CategorySerializer, \
     SubCategorySerializer
@@ -115,29 +116,32 @@ class VendorDashboardView(APIView):
 
     def get(self, request):
         vendor = request.user
-        orders = Order.objects.filter(vendor=vendor).select_related('user', 'cart')
 
-        total_quantity = 0
-        total_revenue = 0
-        product_ids = set()  # to track distinct products sold
-        total_orders = orders.count()  # Count the total number of orders
+        # Get all orders that include this vendor’s products
+        orders = Order.objects.filter(items__product__vendor=vendor).distinct()
+        total_orders = orders.count()
 
+        # Get all order items for this vendor
+        order_items = OrderItem.objects.filter(product__vendor=vendor)
 
-        for order in orders:
-            items = order.cart.items.select_related('product')
-            for item in items:
-                if item.product.vendor == vendor:
-                    total_quantity += item.quantity
-                    total_revenue += item.product.price * item.quantity
-                    product_ids.add(item.product.id)
+        # Calculate total quantity
+        total_quantity = order_items.aggregate(total=Sum('quantity'))['total'] or 0
+
+        # Calculate total revenue
+        total_revenue = order_items.aggregate(
+            total=Sum(F('quantity') * F('product__price'))
+        )['total'] or 0
+
+        # Get distinct product IDs sold
+        product_ids = order_items.values_list('product_id', flat=True).distinct()
 
         return Response({
-            'total_orders': total_orders,  # Total number of orders
-
-            'products_sold_count': len(product_ids),        # distinct products sold
-            'total_items_sold': total_quantity,             # total quantity
-            'total_revenue': total_revenue                  # sum of price × quantity
+            'total_orders': total_orders,
+            'products_sold_count': len(product_ids),
+            'total_items_sold': total_quantity,
+            'total_revenue': total_revenue
         })
+
 
 
 class VendorOrderView(generics.GenericAPIView):
