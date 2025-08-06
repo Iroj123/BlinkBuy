@@ -1,0 +1,13 @@
+FROM python:3.8
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+# Make sure the script is executable
+RUN chmod +x /app/wait-for-db.sh
+
+CMD ["./wait-for-db.sh", "python", "manage.py", "runserver", "0.0.0.0:8000"]
